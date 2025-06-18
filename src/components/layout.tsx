@@ -1,5 +1,6 @@
 "use client";
 import React, { useState } from "react";
+import { useRouter } from "next/navigation";
 import {
   DesktopOutlined,
   FileOutlined,
@@ -12,6 +13,10 @@ const logo = "https://s21.ax1x.com/2025/06/18/pVV9VRs.png";
 const { Header, Content, Footer, Sider } = Layout;
 type MenuItem = Required<MenuProps>["items"][number];
 import Image from "next/image";
+import { usePathname } from 'next/navigation';
+import HomePage from "@/app/home/page";
+import PeoplePage from "@/app/people/page";
+import FilePage from "@/app/file/page";
 function getItem(
   label: React.ReactNode,
   key: React.Key,
@@ -34,7 +39,34 @@ const items: MenuItem[] = [
   ]),
 ];
 
+
 const App: React.FC = () => {
+  const pathname = usePathname();
+  const renderContent = () => {
+    switch(pathname) {
+      case '/people':
+        return <PeoplePage />;
+      case '/file':
+        return <FilePage />;
+      default:
+        return <HomePage />;
+    }
+  };
+  const router = useRouter();
+  const handleMenuClick = (e: { key: string }) => {
+    switch(e.key) {
+      case '1': 
+        router.push('/');
+        break;
+      case '2':
+        router.push('/people');
+        break;
+      case '3':
+        router.push('/file');
+        break;
+      // 其他菜单项处理
+    }
+  };
   const [collapsed, setCollapsed] = useState(false);
   const {
     token: { colorBgContainer, borderRadiusLG },
@@ -61,6 +93,7 @@ const App: React.FC = () => {
           defaultSelectedKeys={["1"]}
           mode="inline"
           items={items}
+          onClick={handleMenuClick}
         />
       </Sider>
       <Layout>
@@ -73,12 +106,12 @@ const App: React.FC = () => {
           <div
             style={{
               padding: 24,
-              minHeight: 600,
+              minHeight: "80vh",
               background: colorBgContainer,
               borderRadius: borderRadiusLG,
             }}
           >
-            Bill is a cat.
+            {renderContent()}
           </div>
         </Content>
         <Footer style={{ textAlign: "center" }}>实验室管理系统</Footer>
