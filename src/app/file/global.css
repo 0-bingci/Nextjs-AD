@@ -1,0 +1,36 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* 自定义样式覆盖 */
+.ant-table-thead > tr > th {
+  @apply bg-gray-50 font-semibold;
+}
+
+.ant-pagination {
+  @apply flex justify-center items-center;
+}
+
+/* 响应式优化 */
+@media (max-width: 768px) {
+  .ant-table-wrapper {
+    @apply overflow-x-auto;
+  }
+
+  .ant-pagination {
+    @apply flex-wrap gap-2;
+  }
+}
+
+/* Ant Design 组件的 Tailwind 样式增强 */
+.ant-btn-primary {
+  @apply transition-colors duration-200;
+}
+
+.ant-input:hover {
+  @apply transition-colors duration-200;
+}
+
+.ant-select:hover .ant-select-selector {
+  @apply transition-colors duration-200;
+}

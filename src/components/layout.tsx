@@ -52,7 +52,20 @@ const App: React.FC = () => {
         return <HomePage />;
     }
   };
+  const renderBreadcrumb = (pathname: string) => { 
+    switch(pathname) {
+      case '/people':
+        return [{title: '服务器'},{title: '人员管理'}];
+      case '/file':
+        return [{title: '服务器'},{title: '文件管理'}];
+      default:
+        return [{ title: '首页' }]
+    }
+    // items={[{ title: "User" }, { title: "Bill" }]}
+  };
+  
   const router = useRouter();
+  const breadcrumbItems = renderBreadcrumb(pathname);
   const handleMenuClick = (e: { key: string }) => {
     switch(e.key) {
       case '1': 
@@ -101,13 +114,13 @@ const App: React.FC = () => {
         <Content style={{ margin: "0 16px" }}>
           <Breadcrumb
             style={{ margin: "16px 0" }}
-            items={[{ title: "User" }, { title: "Bill" }]}
+            items={breadcrumbItems}
           />
           <div
             style={{
               padding: 24,
               minHeight: "80vh",
-              background: colorBgContainer,
+              
               borderRadius: borderRadiusLG,
             }}
           >
