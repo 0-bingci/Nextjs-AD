@@ -1,3 +1,4 @@
+'use client'
 import React from 'react'
 import {
   Table,
@@ -24,7 +25,63 @@ import {
   DeleteOutlined,
   EyeOutlined,
 } from '@ant-design/icons'
+import { useEffect, useState } from 'react'
+import { fetchPeopleData } from '../../api/people'
 export default function People() {
+  const [allData, setAllData] = useState([]) // 新增
+  const [currentPage, setCurrentPage] = useState(1) // 新增
+  const [pageSize, setPageSize] = useState(10) // 新增
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const data = await fetchPeopleData()
+        setAllData(data)
+      } catch (error) {
+        message.error('获取数据失败:' + error)
+      }
+    }
+    fetchData()
+  }, [])
+  const getPaginatedData = () => {
+    const start = (currentPage - 1) * pageSize
+    return allData.slice(start, start + pageSize)
+  }
+  const handlePageChange = (page, size) => {
+    setCurrentPage(page)
+    setPageSize(size)
+  }
+  const columns = [
+    {
+      title: '姓名',
+      dataIndex: ['attributes', 'cn'],
+      key: 'name',
+    },
+    {
+      title: '学院',
+      dataIndex: ['attributes', 'department'],
+      key: 'department',
+    },
+    {
+      title: '学号',
+      dataIndex: ['attributes', 'description', '0'],
+      key: 'studentId',
+    },
+    {
+      title: '班级',
+      dataIndex: ['attributes', 'physicalDeliveryOfficeName'],
+      key: 'class',
+    },
+    {
+      title: '账号',
+      dataIndex: ['attributes', 'sAMAccountName'],
+      key: 'account',
+    },
+    {
+      title: '邮箱',
+      dataIndex: ['attributes', 'userPrincipalName'],
+      key: 'email',
+    },
+  ]
   return (
     <div>
       <Card variant="borderless" style={{}} className="rounded-none w-[100%]">
@@ -77,20 +134,31 @@ export default function People() {
             icon={<PlusOutlined />}
             className="bg-orange-500 hover:bg-orange-600 border-orange-500 hover:border-orange-600 transition-colors"
           >
-            添加供应商
+            添加人员
           </Button>
         </div>
 
         <div className="overflow-x-auto">
-          <Table pagination={false} scroll={{ x: 1200 }} size="middle" className="min-w-full" />
+          <Table
+            pagination={false}
+            scroll={{ x: 1200 }}
+            size="middle"
+            className="min-w-full"
+            columns={columns}
+            dataSource={allData.slice((currentPage - 1) * pageSize, currentPage * pageSize)}
+            rowKey={(record) => record.id || record.attributes.sAMAccountName}
+          />
         </div>
 
         <div className="mt-4 flex justify-center">
           <Pagination
+            current={currentPage}
+            pageSize={pageSize}
+            total={allData.length}
+            onChange={handlePageChange}
             showSizeChanger
             showQuickJumper
             pageSizeOptions={['10', '20', '50', '100']}
-            className="flex flex-wrap items-center justify-center gap-2"
           />
         </div>
       </Card>
