@@ -7,30 +7,27 @@ import {
   Button,
   Space,
   Card,
-  Tag,
-  Typography,
   Row,
   Col,
   Pagination,
-  Tooltip,
   Modal,
   Form,
   message,
+  Switch
 } from 'antd'
 import {
   SearchOutlined,
   ReloadOutlined,
   PlusOutlined,
-  EditOutlined,
-  DeleteOutlined,
-  EyeOutlined,
 } from '@ant-design/icons'
 import { useEffect, useState } from 'react'
-import { fetchPeopleData } from '../../api/people'
+import { fetchPeopleData, createPerson, startPerson,banPerson } from '../../api/people'
 export default function People() {
   const [allData, setAllData] = useState([]) // 新增
   const [currentPage, setCurrentPage] = useState(1) // 新增
   const [pageSize, setPageSize] = useState(10) // 新增
+  const [isModalVisible, setIsModalVisible] = useState(false)
+  const [form] = Form.useForm();
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -42,19 +39,59 @@ export default function People() {
     }
     fetchData()
   }, [])
-  const getPaginatedData = () => {
-    const start = (currentPage - 1) * pageSize
-    return allData.slice(start, start + pageSize)
-  }
   const handlePageChange = (page, size) => {
     setCurrentPage(page)
     setPageSize(size)
   }
+  const handleEdit = (record) => {
+    setIsModalVisible(true);
+    // 实现编辑逻辑
+    console.log('编辑记录:', record);
+    // 这里可以打开模态框或跳转到编辑页面
+  };
+  const handleStart = async (record) => {
+    await startPerson(record.attributes.cn)
+    const newData = await fetchPeopleData();
+    setAllData(newData);
+  };
+
+  const handleBan = async (record) => {
+    await banPerson(record.attributes.cn)
+    const newData = await fetchPeopleData();
+    setAllData(newData);
+  };
+  const handleSubmit=() => { 
+    form.submit() 
+    setIsModalVisible(false); 
+    // form.resetFields();
+  };
+  const handleCancel = () => { 
+    setIsModalVisible(false); 
+    form.resetFields();
+  };
+  const handleAddSupplier = () => {
+    setIsModalVisible(true);
+  };
+  const onFinish = async (values:any) => {
+    try {
+      // console.log(values);
+      await createPerson(values);
+      message.success('创建成功');
+      // 刷新表格数据
+    const newData = await fetchPeopleData();
+    setAllData(newData);
+      form.resetFields();
+    } catch (error) {
+      message.error('创建失败:'+error);
+    }
+  };
+
   const columns = [
     {
       title: '姓名',
       dataIndex: ['attributes', 'cn'],
       key: 'name',
+      width: '8%',
     },
     {
       title: '学院',
@@ -70,6 +107,7 @@ export default function People() {
       title: '班级',
       dataIndex: ['attributes', 'physicalDeliveryOfficeName'],
       key: 'class',
+      width: '8%',
     },
     {
       title: '账号',
@@ -77,10 +115,35 @@ export default function People() {
       key: 'account',
     },
     {
-      title: '邮箱',
-      dataIndex: ['attributes', 'userPrincipalName'],
-      key: 'email',
+      title: '账号状态',
+      dataIndex: ['attributes', 'userAccountControl'],
+      key: 'userAccountControl',
+      width: '10%',
+      render: (_,record) => (
+        <Switch defaultChecked={[66048, 66080].includes(record.attributes.userAccountControl)} checkedChildren="已启用" unCheckedChildren="已禁用" onChange={(checked) => {
+          if (checked) {
+            handleStart(record);
+          }else { 
+            handleBan(record);
+          }
+          
+        }}/>
+      ),
     },
+    {
+      title: '操作',
+      key: 'action',
+      render: (_, record) => (
+        <Space size="middle">
+          <Button color="cyan" variant="solid" onClick={() => handleEdit(record)}>
+           修改密码
+          </Button>
+          <Button color="pink" variant="solid" onClick={() => handleEdit(record)}>
+            编辑信息
+          </Button>
+        </Space>
+      ),
+    }
   ]
   return (
     <div>
@@ -100,9 +163,6 @@ export default function People() {
               className="w-full"
               onChange={(value) => setSearchForm({ ...searchForm, category: value })}
             >
-              <Option value="">全部</Option>
-              <Option value="美日采购类目配置">美日采购类目配置</Option>
-              <Option value="其他类目">其他类目</Option>
             </Select>
           </Col>
         </Row>
@@ -132,6 +192,7 @@ export default function People() {
           <Button
             type="primary"
             icon={<PlusOutlined />}
+            onClick={handleAddSupplier}
             className="bg-orange-500 hover:bg-orange-600 border-orange-500 hover:border-orange-600 transition-colors"
           >
             添加人员
@@ -166,7 +227,10 @@ export default function People() {
       {/* Add Supplier Modal */}
       <Modal
         title={<span className="text-lg font-semibold">添加供应商</span>}
+        open={isModalVisible}
         width={600}
+        onOk={handleSubmit}
+        onCancel={handleCancel}
         okText="确定"
         cancelText="取消"
         className="top-8"
@@ -174,73 +238,85 @@ export default function People() {
           className: 'bg-orange-500 hover:bg-orange-600 border-orange-500 hover:border-orange-600',
         }}
       >
-        <Form layout="vertical" name="addSupplier" className="mt-6">
+        <Form layout="vertical" name="addSupplier" form={form} onFinish={onFinish} className="mt-6">
           <Row gutter={16}>
             <Col span={12}>
               <Form.Item
-                name="supplierName"
-                label={<span className="font-medium">供应商名称</span>}
-                rules={[{ required: true, message: '请输入供应商名称' }]}
+                name="cn"
+                label={<span className="font-medium">姓名</span>}
+                rules={[{ required: true, message: '请输入姓名' }]}
               >
                 <Input
-                  placeholder="请输入供应商名称"
+                  placeholder="请输入姓名"
                   className="hover:border-orange-400 focus:border-orange-500"
                 />
               </Form.Item>
             </Col>
             <Col span={12}>
-              <Form.Item
-                name="type"
-                label={<span className="font-medium">类型</span>}
-                rules={[{ required: true, message: '请选择类型' }]}
-              >
-                <Select placeholder="请选择类型" className="hover:border-orange-400">
-                  <Option value="普通">普通</Option>
-                  <Option value="重要">重要</Option>
-                  <Option value="战略">战略</Option>
-                </Select>
-              </Form.Item>
-            </Col>
-          </Row>
-          <Row gutter={16}>
-            <Col span={12}>
-              <Form.Item
-                name="category"
-                label={<span className="font-medium">采购类目</span>}
-                rules={[{ required: true, message: '请选择采购类目' }]}
-              >
-                <Select placeholder="请选择采购类目" className="hover:border-orange-400">
-                  <Option value="美日采购类目配置">美日采购类目配置</Option>
-                  <Option value="其他类目">其他类目</Option>
-                </Select>
-              </Form.Item>
-            </Col>
-            <Col span={12}>
-              <Form.Item
-                name="email"
-                label={<span className="font-medium">邮箱地址</span>}
-                rules={[
-                  { required: true, message: '请输入邮箱地址' },
-                  { type: 'email', message: '请输入有效的邮箱地址' },
-                ]}
+            <Form.Item
+                name="department"
+                label={<span className="font-medium">学院</span>}
+                rules={[{ required: true, message: '请输入学院' }]}
               >
                 <Input
-                  placeholder="请输入邮箱地址"
+                  placeholder="请输入学院"
                   className="hover:border-orange-400 focus:border-orange-500"
                 />
               </Form.Item>
             </Col>
           </Row>
-          <Form.Item
-            name="purchaser"
-            label={<span className="font-medium">采购员</span>}
-            rules={[{ required: true, message: '请输入采购员信息' }]}
-          >
-            <Input
-              placeholder="请输入采购员姓名和工号"
-              className="hover:border-orange-400 focus:border-orange-500"
-            />
-          </Form.Item>
+          <Row gutter={16}>
+            <Col span={12}>
+            <Form.Item
+                name="description"
+                label={<span className="font-medium">学号</span>}
+                rules={[{ required: true, message: '请输入学号' }]}
+              >
+                <Input
+                  placeholder="请输入学号"
+                  className="hover:border-orange-400 focus:border-orange-500"
+                />
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+            <Form.Item
+                name="physicalDeliveryOfficeName"
+                label={<span className="font-medium">班级</span>}
+                rules={[{ required: true, message: '请输入班级' }]}
+              >
+                <Input
+                  placeholder="请输入班级"
+                  className="hover:border-orange-400 focus:border-orange-500"
+                />
+              </Form.Item>
+            </Col>
+          </Row>
+          <Row gutter={16}>
+            <Col span={12}>
+            <Form.Item
+                name="sAMAccountName"
+                label={<span className="font-medium">账号</span>}
+                rules={[{ required: true, message: '请输入账号' }]}
+              >
+                <Input
+                  placeholder="请输入账号"
+                  className="hover:border-orange-400 focus:border-orange-500"
+                />
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+            <Form.Item
+                name="password"
+                label={<span className="font-medium">密码</span>}
+                rules={[{ required: true, message: '请输入密码' }]}
+              >
+                <Input
+                  placeholder="请输入密码"
+                  className="hover:border-orange-400 focus:border-orange-500"
+                />
+              </Form.Item>
+            </Col>
+          </Row>
         </Form>
       </Modal>
     </div>
