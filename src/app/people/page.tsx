@@ -13,21 +13,37 @@ import {
   Modal,
   Form,
   message,
-  Switch
+  Switch,
 } from 'antd'
-import {
-  SearchOutlined,
-  ReloadOutlined,
-  PlusOutlined,
-} from '@ant-design/icons'
+import { SearchOutlined, ReloadOutlined, PlusOutlined } from '@ant-design/icons'
 import { useEffect, useState } from 'react'
-import { fetchPeopleData, createPerson, startPerson,banPerson } from '../../api/people'
+import {
+  fetchPeopleData,
+  createPerson,
+  startPerson,
+  banPerson,
+  changePassword,
+  deletePerson,
+  editPerson
+} from '../../api/people'
 export default function People() {
   const [allData, setAllData] = useState([]) // 新增
   const [currentPage, setCurrentPage] = useState(1) // 新增
   const [pageSize, setPageSize] = useState(10) // 新增
   const [isModalVisible, setIsModalVisible] = useState(false)
-  const [form] = Form.useForm();
+  const [passwordModalVisible, setPasswordModalVisible] = useState(false)
+  const [form] = Form.useForm()
+  const [form1] = Form.useForm()
+  const [form2] = Form.useForm()
+  const [currentRecord, setCurrentRecord] = useState<any>(null)
+  const [deleteModalVisible, setDeleteModalVisible] = useState(false)
+  const [editModalVisible, setEditModalVisible] = useState(false)
+
+  const handleEditConfirm = () => {
+    form2.submit()
+    setEditModalVisible(false)
+  }
+
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -43,48 +59,76 @@ export default function People() {
     setCurrentPage(page)
     setPageSize(size)
   }
-  const handleEdit = (record) => {
-    setIsModalVisible(true);
-    // 实现编辑逻辑
-    console.log('编辑记录:', record);
-    // 这里可以打开模态框或跳转到编辑页面
-  };
   const handleStart = async (record) => {
     await startPerson(record.attributes.cn)
-    const newData = await fetchPeopleData();
-    setAllData(newData);
-  };
+    const newData = await fetchPeopleData()
+    setAllData(newData)
+  }
 
   const handleBan = async (record) => {
     await banPerson(record.attributes.cn)
-    const newData = await fetchPeopleData();
-    setAllData(newData);
-  };
-  const handleSubmit=() => { 
-    form.submit() 
-    setIsModalVisible(false); 
+    const newData = await fetchPeopleData()
+    setAllData(newData)
+  }
+  const handleDelete = async () => {
+    await deletePerson(currentRecord.attributes.cn)
+    setDeleteModalVisible(false)
+    const newData = await fetchPeopleData()
+    setAllData(newData)
+  }
+  const handleSubmit = () => {
+    form.submit()
+    setIsModalVisible(false)
     // form.resetFields();
-  };
-  const handleCancel = () => { 
-    setIsModalVisible(false); 
-    form.resetFields();
-  };
+  }
+  const handleCancel = () => {
+    setIsModalVisible(false)
+    form.resetFields()
+  }
   const handleAddSupplier = () => {
-    setIsModalVisible(true);
-  };
-  const onFinish = async (values:any) => {
+    setIsModalVisible(true)
+  }
+
+  const onFinish = async (values: any) => {
     try {
       // console.log(values);
-      await createPerson(values);
-      message.success('创建成功');
+      await createPerson(values)
+      message.success('创建成功')
       // 刷新表格数据
-    const newData = await fetchPeopleData();
-    setAllData(newData);
-      form.resetFields();
+      const newData = await fetchPeopleData()
+      setAllData(newData)
+      form.resetFields()
     } catch (error) {
-      message.error('创建失败:'+error);
+      message.error('创建失败:' + error)
     }
-  };
+  }
+  const onFinishPassword = (values: any, record: any) => {
+    const requestData = {
+      ...values,
+      cn: record.attributes.cn, // 假设record中包含cn字段
+    }
+    changePassword(requestData)
+    setPasswordModalVisible(false)
+    form1.resetFields()
+  }
+  const onFinishEdit=async (values: any, record: any)=>{
+    const requestData = {
+      ...values,
+      cn: record.attributes.cn,
+      description: values.description[0] // 取数组第一个元素作为字符串
+    }
+    console.log(requestData);
+    
+    await editPerson(requestData)
+    setEditModalVisible(false)
+    const newData = await fetchPeopleData()
+    setAllData(newData)
+    
+    
+  }
+  const handlePasswordSubmit = async () => {
+    form1.submit()
+  }
 
   const columns = [
     {
@@ -119,15 +163,19 @@ export default function People() {
       dataIndex: ['attributes', 'userAccountControl'],
       key: 'userAccountControl',
       width: '10%',
-      render: (_,record) => (
-        <Switch defaultChecked={[66048, 66080].includes(record.attributes.userAccountControl)} checkedChildren="已启用" unCheckedChildren="已禁用" onChange={(checked) => {
-          if (checked) {
-            handleStart(record);
-          }else { 
-            handleBan(record);
-          }
-          
-        }}/>
+      render: (_, record) => (
+        <Switch
+          defaultChecked={[66048, 66080].includes(record.attributes.userAccountControl)}
+          checkedChildren="已启用"
+          unCheckedChildren="已禁用"
+          onChange={(checked) => {
+            if (checked) {
+              handleStart(record)
+            } else {
+              handleBan(record)
+            }
+          }}
+        />
       ),
     },
     {
@@ -135,19 +183,48 @@ export default function People() {
       key: 'action',
       render: (_, record) => (
         <Space size="middle">
-          <Button color="cyan" variant="solid" onClick={() => handleEdit(record)}>
-           修改密码
+          <Button
+            color="cyan"
+            variant="solid"
+            onClick={() => {
+              setCurrentRecord(record)
+              setPasswordModalVisible(true)
+            }}
+          >
+            修改密码
           </Button>
-          <Button color="pink" variant="solid" onClick={() => handleEdit(record)}>
+          <Button
+            color="pink"
+            variant="solid"
+            onClick={() => {
+              setCurrentRecord(record)
+              form2.setFieldsValue({
+                department: record.attributes.department,
+                description: record.attributes.description,
+                physicalDeliveryOfficeName: record.attributes.physicalDeliveryOfficeName
+              });
+              setEditModalVisible(true)
+            }}
+          >
             编辑信息
+          </Button>
+          <Button
+            color="danger"
+            variant="solid"
+            onClick={() => {
+              setCurrentRecord(record)
+              setDeleteModalVisible(true)
+            }}
+          >
+            删除账号
           </Button>
         </Space>
       ),
-    }
+    },
   ]
   return (
     <div>
-      <Card variant="borderless" style={{}} className="rounded-none w-[100%]">
+      {/* <Card variant="borderless" style={{}} className="rounded-none w-[100%]">
         <Row gutter={[16, 16]}>
           <Col xs={24} sm={12} md={6}>
             <div className="relative">
@@ -185,7 +262,7 @@ export default function People() {
             </Space>
           </Col>
         </Row>
-      </Card>
+      </Card> */}
 
       <Card style={{ marginTop: 20 }} className="rounded-none w-[100%] min-h-[50vh] shadow-sm">
         <div className="mb-4">
@@ -226,7 +303,7 @@ export default function People() {
 
       {/* Add Supplier Modal */}
       <Modal
-        title={<span className="text-lg font-semibold">添加供应商</span>}
+        title={<span className="text-lg font-semibold">添加人员</span>}
         open={isModalVisible}
         width={600}
         onOk={handleSubmit}
@@ -253,7 +330,7 @@ export default function People() {
               </Form.Item>
             </Col>
             <Col span={12}>
-            <Form.Item
+              <Form.Item
                 name="department"
                 label={<span className="font-medium">学院</span>}
                 rules={[{ required: true, message: '请输入学院' }]}
@@ -267,7 +344,7 @@ export default function People() {
           </Row>
           <Row gutter={16}>
             <Col span={12}>
-            <Form.Item
+              <Form.Item
                 name="description"
                 label={<span className="font-medium">学号</span>}
                 rules={[{ required: true, message: '请输入学号' }]}
@@ -279,7 +356,7 @@ export default function People() {
               </Form.Item>
             </Col>
             <Col span={12}>
-            <Form.Item
+              <Form.Item
                 name="physicalDeliveryOfficeName"
                 label={<span className="font-medium">班级</span>}
                 rules={[{ required: true, message: '请输入班级' }]}
@@ -293,7 +370,7 @@ export default function People() {
           </Row>
           <Row gutter={16}>
             <Col span={12}>
-            <Form.Item
+              <Form.Item
                 name="sAMAccountName"
                 label={<span className="font-medium">账号</span>}
                 rules={[{ required: true, message: '请输入账号' }]}
@@ -305,7 +382,7 @@ export default function People() {
               </Form.Item>
             </Col>
             <Col span={12}>
-            <Form.Item
+              <Form.Item
                 name="password"
                 label={<span className="font-medium">密码</span>}
                 rules={[{ required: true, message: '请输入密码' }]}
@@ -317,6 +394,74 @@ export default function People() {
               </Form.Item>
             </Col>
           </Row>
+        </Form>
+      </Modal>
+      <Modal
+        title="修改密码"
+        okText="确定"
+        cancelText="取消"
+        open={passwordModalVisible}
+        onOk={handlePasswordSubmit}
+        onCancel={() => {
+          form1.resetFields()
+          setPasswordModalVisible(false)
+        }}
+      >
+        <Form form={form1} onFinish={(value) => onFinishPassword(value, currentRecord)}>
+          <Form.Item name="newpassword" label="新密码">
+            <Input.Password />
+          </Form.Item>
+        </Form>
+      </Modal>
+      <Modal
+        okText="确定"
+        cancelText="取消"
+        title="确认删除账号"
+        open={deleteModalVisible}
+        onOk={handleDelete}
+        onCancel={() => setDeleteModalVisible(false)}
+      >
+        确定要删除账号 {currentRecord?.name} 吗？
+      </Modal>
+      <Modal
+        okText="确定"
+        cancelText="取消"
+        title="编辑账号信息"
+        open={editModalVisible}
+        onOk={handleEditConfirm}
+        onCancel={() => setEditModalVisible(false)}
+      >
+        <Form layout="vertical" name="addSupplier" form={form2} onFinish={(value) => onFinishEdit(value, currentRecord)} className="mt-6">
+              <Form.Item
+                name="department"
+                label={<span className="font-medium">学院</span>}
+                rules={[{ required: true, message: '请输入学院' }]}
+              >
+                <Input
+                  placeholder="请输入学院"
+                  className="hover:border-orange-400 focus:border-orange-500"
+                />
+              </Form.Item>
+              <Form.Item
+                name="description"
+                label={<span className="font-medium">学号</span>}
+                rules={[{ required: true, message: '请输入学号' }]}
+              >
+                <Input
+                  placeholder="请输入学号"
+                  className="hover:border-orange-400 focus:border-orange-500"
+                />
+              </Form.Item>
+              <Form.Item
+                name="physicalDeliveryOfficeName"
+                label={<span className="font-medium">班级</span>}
+                rules={[{ required: true, message: '请输入班级' }]}
+              >
+                <Input
+                  placeholder="请输入班级"
+                  className="hover:border-orange-400 focus:border-orange-500"
+                />
+              </Form.Item>
         </Form>
       </Modal>
     </div>
