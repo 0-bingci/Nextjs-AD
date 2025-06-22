@@ -27,7 +27,9 @@ import {
   editPerson
 } from '../../api/people'
 export default function People() {
+  const [inputValue, setInputValue] = useState('');
   const [allData, setAllData] = useState([]) // 新增
+  const [reallyAllData, setReallyAllData] = useState([])
   const [currentPage, setCurrentPage] = useState(1) // 新增
   const [pageSize, setPageSize] = useState(10) // 新增
   const [isModalVisible, setIsModalVisible] = useState(false)
@@ -43,11 +45,17 @@ export default function People() {
     form2.submit()
     setEditModalVisible(false)
   }
+  const updateData = async () => { 
+    const data = await fetchPeopleData()
+    setReallyAllData(data)
+    setAllData(data)
+  }
 
   useEffect(() => {
     const fetchData = async () => {
       try {
         const data = await fetchPeopleData()
+        setReallyAllData(data)
         setAllData(data)
       } catch (error) {
         message.error('获取数据失败:' + error)
@@ -64,7 +72,20 @@ export default function People() {
     const newData = await fetchPeopleData()
     setAllData(newData)
   }
+  const handleReset = async () => { 
+    setInputValue('')
+    updateData()
 
+  }
+  const handleSearch = async () => {
+    console.log(reallyAllData);
+    
+    const filteredData = reallyAllData.filter(item => 
+      item.attributes.cn.includes(inputValue) ||
+      item.attributes.cn.toLowerCase().includes(inputValue.toLowerCase())
+    );
+    setAllData(filteredData);
+  };
   const handleBan = async (record) => {
     await banPerson(record.attributes.cn)
     const newData = await fetchPeopleData()
@@ -224,23 +245,12 @@ export default function People() {
   ]
   return (
     <div>
-      {/* <Card variant="borderless" style={{}} className="rounded-none w-[100%]">
+      <Card variant="borderless" style={{}} className="rounded-none w-[100%]">
         <Row gutter={[16, 16]}>
           <Col xs={24} sm={12} md={6}>
             <div className="relative">
-              <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 text-sm">
-                供应商全称
-              </span>
-              <Input placeholder="输入名称" className="pl-20" />
+              <Input placeholder="输入名字" className="pl-20" value={inputValue} onChange={(e) => setInputValue(e.target.value)}/>
             </div>
-          </Col>
-          <Col xs={24} sm={12} md={6}>
-            <Select
-              placeholder="全部"
-              className="w-full"
-              onChange={(value) => setSearchForm({ ...searchForm, category: value })}
-            >
-            </Select>
           </Col>
         </Row>
         <Row className="mt-4">
@@ -248,6 +258,7 @@ export default function People() {
             <Space>
               <Button
                 type="primary"
+                onClick={handleSearch}
                 icon={<SearchOutlined />}
                 className="bg-orange-500 hover:bg-orange-600 border-orange-500 hover:border-orange-600 transition-colors"
               >
@@ -255,6 +266,7 @@ export default function People() {
               </Button>
               <Button
                 icon={<ReloadOutlined />}
+                onClick={handleReset}
                 className="hover:text-orange-500 hover:border-orange-500 transition-colors"
               >
                 重置
@@ -262,7 +274,7 @@ export default function People() {
             </Space>
           </Col>
         </Row>
-      </Card> */}
+      </Card>
 
       <Card style={{ marginTop: 20 }} className="rounded-none w-[100%] min-h-[50vh] shadow-sm">
         <div className="mb-4">
