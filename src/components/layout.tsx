@@ -66,6 +66,13 @@ const App: React.FC = () => {
   
   const router = useRouter();
   const breadcrumbItems = renderBreadcrumb(pathname);
+  const getSelectedKeys = (pathname: string) => {
+    switch(pathname) {
+      case '/people': return ['2'];
+      case '/file': return ['3'];
+      default: return ['1'];
+    }
+  };
   const handleMenuClick = (e: { key: string }) => {
     switch(e.key) {
       case '1': 
@@ -90,20 +97,29 @@ const App: React.FC = () => {
       <Sider
         collapsible
         collapsed={collapsed}
-        onCollapse={(value) => setCollapsed(value)}
+        onCollapse={(value) => {setCollapsed(value)
+          
+        }}
       >
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px'}}>
+        <div style={{ 
+          display: 'flex', 
+          alignItems: 'center', 
+          gap: '10px',
+          justifyContent: collapsed ? 'center' : 'flex-start'
+        }}>
           <Image
             src={logo}
             alt="Logo"
             width={75}
             height={75}
           />
-          <div style={{ fontSize: '20px', fontWeight: 'bold',color:"white"}}>管理系统</div>
+          {!collapsed && (
+            <div style={{ fontSize: '20px', fontWeight: 'bold',color:"white"}}>管理系统</div>
+          )}
         </div>
         <Menu
           theme="dark"
-          defaultSelectedKeys={["1"]}
+          selectedKeys={getSelectedKeys(pathname)}
           mode="inline"
           items={items}
           onClick={handleMenuClick}
