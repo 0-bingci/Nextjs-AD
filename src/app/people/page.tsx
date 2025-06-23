@@ -63,11 +63,11 @@ export default function People() {
     }
     fetchData()
   }, [])
-  const handlePageChange = (page, size) => {
+  const handlePageChange = (page: any, size: any) => {
     setCurrentPage(page)
     setPageSize(size)
   }
-  const handleStart = async (record) => {
+  const handleStart = async (record: any) => {
     await startPerson(record.attributes.cn)
     const newData = await fetchPeopleData()
     setAllData(newData)
@@ -80,13 +80,13 @@ export default function People() {
   const handleSearch = async () => {
     console.log(reallyAllData);
     
-    const filteredData = reallyAllData.filter(item => 
+    const filteredData = reallyAllData.filter((item: Person) => 
       item.attributes.cn.includes(inputValue) ||
       item.attributes.cn.toLowerCase().includes(inputValue.toLowerCase())
     );
     setAllData(filteredData);
   };
-  const handleBan = async (record) => {
+  const handleBan = async (record: any) => {
     await banPerson(record.attributes.cn)
     const newData = await fetchPeopleData()
     setAllData(newData)
@@ -132,7 +132,7 @@ export default function People() {
     setPasswordModalVisible(false)
     form1.resetFields()
   }
-  const onFinishEdit=async (values: any, record: any)=>{
+  const onFinishEdit=async (values: PersonAttributes, record: Person)=>{
     const requestData = {
       ...values,
       cn: record.attributes.cn,
@@ -184,7 +184,7 @@ export default function People() {
       dataIndex: ['attributes', 'userAccountControl'],
       key: 'userAccountControl',
       width: '10%',
-      render: (_, record) => (
+      render: (_: unknown, record: Person) => (
         <Switch
           defaultChecked={[66048, 66080].includes(record.attributes.userAccountControl)}
           checkedChildren="已启用"
@@ -202,7 +202,7 @@ export default function People() {
     {
       title: '操作',
       key: 'action',
-      render: (_, record) => (
+      render: (_: unknown, record: Person) => (
         <Space size="middle">
           <Button
             color="cyan"
@@ -296,7 +296,7 @@ export default function People() {
             className="min-w-full"
             columns={columns}
             dataSource={allData.slice((currentPage - 1) * pageSize, currentPage * pageSize)}
-            rowKey={(record) => record.id || record.attributes.sAMAccountName}
+            rowKey={(record) => record.id || record.attributes?.sAMAccountName}
           />
         </div>
 
@@ -478,4 +478,18 @@ export default function People() {
       </Modal>
     </div>
   )
+}
+
+interface PersonAttributes {
+  cn: string;
+  department: string;
+  description: string[];
+  physicalDeliveryOfficeName: string;
+  sAMAccountName: string;
+  userAccountControl: number;
+}
+
+interface Person {
+  id?: string;
+  attributes: PersonAttributes;
 }

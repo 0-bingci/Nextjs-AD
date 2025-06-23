@@ -8,7 +8,7 @@ export const fetchAPI = async (endpoint: string) => {
     // 将响应体解析为JSON格式并返回
     return response.json();
   };
-  export const postAPI = async (endpoint: string, data: any) => {
+  export const postAPI = async (endpoint: string, data: Record<string, unknown>) => {
     const baseURL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://127.0.0.1:5000';
     
     const response = await fetch(`${baseURL}${endpoint}`, {
