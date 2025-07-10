@@ -6,6 +6,9 @@ import {
   FileOutlined,
   PieChartOutlined,
   TeamOutlined,
+  FormOutlined,
+  HighlightOutlined,
+  
 } from "@ant-design/icons";
 import type { MenuProps } from "antd";
 import { Breadcrumb, Layout, Menu, theme } from "antd";
@@ -14,9 +17,10 @@ const { Header, Content, Footer, Sider } = Layout;
 type MenuItem = Required<MenuProps>["items"][number];
 import Image from "next/image";
 import { usePathname } from 'next/navigation';
-import HomePage from "@/app/home/page";
+import HomePage from "../../src/app/home/page";
 import PeoplePage from "@/app/people/page";
 import FilePage from "@/app/file/page";
+import Board from "@/app/whiteBoard/page";
 function getItem(
   label: React.ReactNode,
   key: React.Key,
@@ -37,6 +41,9 @@ const items: MenuItem[] = [
     getItem("人员管理", "2",<TeamOutlined />),
     getItem("文件管理", "3",<FileOutlined />),
   ]),
+  getItem("工具", "sub2", <FormOutlined />, [
+    getItem("白板", "4",<HighlightOutlined />)
+  ]),
 ];
 
 
@@ -48,6 +55,8 @@ const App: React.FC = () => {
         return <PeoplePage />;
       case '/file':
         return <FilePage />;
+      case '/whiteBoard':
+        return <Board />;
       default:
         return <HomePage />;
     }
@@ -58,6 +67,8 @@ const App: React.FC = () => {
         return [{title: '服务器'},{title: '人员管理'}];
       case '/file':
         return [{title: '服务器'},{title: '文件管理'}];
+      case '/whiteBoard':
+        return [{title: '工具'},{title: '白板'}];
       default:
         return [{ title: '首页' }]
     }
@@ -70,6 +81,7 @@ const App: React.FC = () => {
     switch(pathname) {
       case '/people': return ['2'];
       case '/file': return ['3'];
+      case '/whiteBoard': return ['4'];
       default: return ['1'];
     }
   };
@@ -83,6 +95,9 @@ const App: React.FC = () => {
         break;
       case '3':
         router.push('/file');
+        break;
+      case '4':
+        router.push('/whiteBoard');
         break;
       // 其他菜单项处理
     }
