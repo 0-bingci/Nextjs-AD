@@ -4,5 +4,8 @@
   "tabWidth": 2,
   "trailingComma": "es5",
   "printWidth": 100,
-  "endOfLine": "auto"
+  "endOfLine": "auto",
+  "editor.formatOnSave": true,
+  "editor.defaultFormatter": "esbenp.prettier-vscode",
+  "plugins": ["prettier-plugin-tailwindcss"]
 }

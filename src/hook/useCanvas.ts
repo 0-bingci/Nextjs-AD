@@ -1,7 +1,8 @@
 'use client'
 import { useRef, useEffect, useState } from 'react'
-
+import { useTextTool } from '../hook/useTextTool'
 export default function useCanvas() {
+  // 初始配置
   const lastPointRef = useRef<{ x: number; y: number } | null>(null)
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const ctxRef = useRef<CanvasRenderingContext2D | null>(null)
@@ -11,8 +12,50 @@ export default function useCanvas() {
     lineCap: 'round' as CanvasLineCap,
     lineJoin: 'round' as CanvasLineJoin,
   })
-  
+  // 模式设置
   const [isDrawingMode, setIsDrawingMode] = useState(false);
+  const [isTextMode, setIsTextMode] = useState(false);
+  const [isPointerMode, setIsPointerMode] = useState(false);
+  const [isEraserMode, setIsEraserMode] = useState(false);
+  //hook导出方法
+  const { createText } = useTextTool(canvasRef, () => console.log(233));
+
+  // 使用AbortController管理事件监听器
+  const abortControllerRef = useRef<AbortController | null>(null)
+
+  // 根据模式动态添加/移除事件监听器
+  const handleModeChange = () => {
+    if (!canvasRef.current) return
+    
+    // 终止之前的控制器以移除所有事件监听器
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort()
+    }
+    
+    // 创建新的AbortController
+    abortControllerRef.current = new AbortController()
+    const { signal } = abortControllerRef.current
+    
+    if (isDrawingMode) {
+      // 绘图模式：只添加双击事件
+      canvasRef.current.addEventListener('dblclick', createText, { signal })
+      canvasRef.current.addEventListener('mousedown', handleMouseDown, { signal })
+      canvasRef.current.addEventListener('mousemove', handleMouseMove, { signal })
+      canvasRef.current.addEventListener('mouseup', handleMouseUp, { signal })
+    } else if (isTextMode) {
+      // 文本模式：添加单击和双击事件
+      canvasRef.current.addEventListener('click', createText, { signal })
+      canvasRef.current.addEventListener('dblclick', createText, { signal })
+    }
+    
+    // // 始终添加移动和释放事件（在handleMouseDown中会检查模式）
+    // canvasRef.current.addEventListener('mousemove', handleMouseMove, { signal })
+    // canvasRef.current.addEventListener('mouseup', handleMouseUp, { signal })
+  }
+  //监听模式
+  useEffect(() => {
+    handleModeChange();
+  }, [isDrawingMode, isTextMode, isPointerMode, isEraserMode])
   // 在useEffect中应用配置
   useEffect(() => {
     if (ctxRef.current) {
@@ -41,13 +84,7 @@ export default function useCanvas() {
     ctx.lineWidth = 5
     ctx.strokeStyle = '#000'
 
-    // 添加事件监听
-    canvas.addEventListener('mousedown', handleMouseDown)
-
-    return () => {
-      canvas.removeEventListener('mousedown', handleMouseDown)
-    }
-  }, [isDrawingMode])
+  }, [])
 
   // 获取画布坐标
   function getCanvasCoordinates(e: MouseEvent) {
@@ -84,9 +121,6 @@ export default function useCanvas() {
     const { x, y } = getCanvasCoordinates(e)
     drawPoint(x, y)
     lastPointRef.current = { x, y }
-
-    canvasRef.current?.addEventListener('mousemove', handleMouseMove)
-    canvasRef.current?.addEventListener('mouseup', handleMouseUp)
   }
 
   // 鼠标移动事件
@@ -100,6 +134,8 @@ export default function useCanvas() {
 
   // 鼠标释放事件
   function handleMouseUp() {
+    lastPointRef.current = null; // 重置最后点
+    
     if (!canvasRef.current) return
     canvasRef.current.removeEventListener('mousemove', handleMouseMove)
     canvasRef.current.removeEventListener('mouseup', handleMouseUp)
@@ -112,13 +148,18 @@ export default function useCanvas() {
   //   function clearCanvas() {
   //     if (!canvasRef.current || !ctxRef.current) return
   //     ctxRef.current.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height)
-  //   }
-
+  //   
   return {
     canvasRef,
     drawConfig,
     updateDrawConfig,
     isDrawingMode,
     setDrawingMode: setIsDrawingMode,
+    setIsTextMode,
+    isTextMode,
+    setIsPointerMode,
+    isPointerMode,
+    setIsEraserMode,
+    isEraserMode,
   }
 }
