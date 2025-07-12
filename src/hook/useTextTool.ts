@@ -1,5 +1,6 @@
 import { useState } from 'react'
-export const useTextTool = (canvasRef: React.RefObject<HTMLCanvasElement | null>, onBlur: () => void) => {
+import useCanvas from './useCanvas'
+export const useTextTool = (canvasRef: React.RefObject<HTMLCanvasElement | null>, onBlur?: () => void) => {
   const [textConfig, setTextConfig] = useState({
     color: '#000000',
     fontSize: 16,
@@ -26,10 +27,7 @@ export const useTextTool = (canvasRef: React.RefObject<HTMLCanvasElement | null>
       if (!input.value.trim()) {
         document.body.removeChild(input);
       }
-      onBlur();
-      console.log(5);
-      console.log('typeof onBlur:', typeof onBlur);
-console.log('onBlur.toString():', onBlur.toString());
+      onBlur?.()
       
     });
     
